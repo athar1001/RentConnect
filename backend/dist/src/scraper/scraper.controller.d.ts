@@ -1,0 +1,42 @@
+import { ScraperService } from './scraper.service';
+import type { Request } from 'express';
+export declare class ScraperController {
+    private readonly scraperService;
+    constructor(scraperService: ScraperService);
+    importApartment(req: Request, url: string): Promise<{
+        id: string;
+        status: import(".prisma/client").$Enums.ApartmentStatus;
+        createdAt: Date;
+        updatedAt: Date;
+        title: string;
+        rentPrice: number | null;
+        warmRent: number | null;
+        coldRent: number | null;
+        deposit: number | null;
+        address: string | null;
+        city: string | null;
+        zipCode: string | null;
+        rooms: number | null;
+        squareMeters: number | null;
+        furnished: boolean;
+        balcony: boolean;
+        petsAllowed: boolean;
+        moveInDate: Date | null;
+        sourcePlatform: string | null;
+        originalListingUrl: string | null;
+        listingId: string | null;
+        coverImage: string | null;
+        energyClass: string | null;
+        utilityCosts: number | null;
+        heatingCostsIncluded: boolean;
+        heatingCosts: number | null;
+        constructionYear: number | null;
+        heatingType: string | null;
+        energySource: string | null;
+        certificateType: string | null;
+        description: string | null;
+        availability: string | null;
+        floor: string | null;
+        userId: string;
+    }>;
+}

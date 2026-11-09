@@ -1,0 +1,84 @@
+import { OnModuleInit, OnModuleDestroy } from '@nestjs/common';
+import { PrismaService } from '../prisma/prisma.service';
+import { ReminderType } from '@prisma/client';
+export declare class RemindersService implements OnModuleInit, OnModuleDestroy {
+    private prisma;
+    private readonly logger;
+    private mailTransporter;
+    private schedulerInterval;
+    constructor(prisma: PrismaService);
+    onModuleInit(): void;
+    onModuleDestroy(): void;
+    private startScheduler;
+    private processPendingReminders;
+    private sendEmail;
+    create(userId: string, data: {
+        apartmentId?: string;
+        title: string;
+        description?: string;
+        type: ReminderType;
+        dateTime: Date;
+    }): import(".prisma/client").Prisma.Prisma__ReminderClient<{
+        id: string;
+        title: string;
+        description: string | null;
+        type: import(".prisma/client").$Enums.ReminderType;
+        dateTime: Date;
+        completed: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        apartmentId: string | null;
+    }, never, import("@prisma/client/runtime/library").DefaultArgs>;
+    findAll(userId: string): import(".prisma/client").Prisma.PrismaPromise<({
+        apartment: {
+            id: string;
+            title: string;
+            description: string | null;
+            createdAt: Date;
+            updatedAt: Date;
+            userId: string;
+            rentPrice: number | null;
+            warmRent: number | null;
+            coldRent: number | null;
+            deposit: number | null;
+            address: string | null;
+            city: string | null;
+            zipCode: string | null;
+            rooms: number | null;
+            squareMeters: number | null;
+            furnished: boolean;
+            balcony: boolean;
+            petsAllowed: boolean;
+            moveInDate: Date | null;
+            sourcePlatform: string | null;
+            originalListingUrl: string | null;
+            listingId: string | null;
+            coverImage: string | null;
+            status: import(".prisma/client").$Enums.ApartmentStatus;
+            energyClass: string | null;
+            utilityCosts: number | null;
+            heatingCostsIncluded: boolean;
+            heatingCosts: number | null;
+            constructionYear: number | null;
+            heatingType: string | null;
+            energySource: string | null;
+            certificateType: string | null;
+            availability: string | null;
+            floor: string | null;
+        } | null;
+    } & {
+        id: string;
+        title: string;
+        description: string | null;
+        type: import(".prisma/client").$Enums.ReminderType;
+        dateTime: Date;
+        completed: boolean;
+        createdAt: Date;
+        updatedAt: Date;
+        userId: string;
+        apartmentId: string | null;
+    })[]>;
+    update(userId: string, id: string, data: any): Promise<import(".prisma/client").Prisma.BatchPayload>;
+    remove(userId: string, id: string): import(".prisma/client").Prisma.PrismaPromise<import(".prisma/client").Prisma.BatchPayload>;
+}

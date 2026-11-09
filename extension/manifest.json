@@ -1,0 +1,116 @@
+{
+  "manifest_version": 3,
+  "name": "WohnBoard Listing Importer",
+  "version": "1.0.0",
+  "description": "Save apartment listings from ImmoScout24 and WG-Gesucht directly to your WohnBoard account with one click.",
+  "permissions": [
+    "activeTab",
+    "cookies",
+    "storage"
+  ],
+  "background": {
+    "service_worker": "background.js"
+  },
+  "host_permissions": [
+    "http://localhost/*",
+    "http://localhost:3000/*",
+    "http://localhost:3001/*",
+    "http://127.0.0.1/*",
+    "http://127.0.0.1:3000/*",
+    "http://127.0.0.1:3001/*",
+    "https://*.immobilienscout24.de/*",
+    "https://*.wg-gesucht.de/*",
+    "https://*.kleinanzeigen.de/*",
+    "https://*.immowelt.de/*",
+    "https://*.immonet.de/*",
+    "https://*.housinganywhere.com/*",
+    "https://*.wunderflats.com/*",
+    "https://*.spotahome.com/*",
+    "https://*.degewo.de/*",
+    "https://*.gesobau.de/*",
+    "https://*.howoge.de/*",
+    "https://*.gewobag.de/*",
+    "https://*.wbm.de/*",
+    "https://*.stadtundland.de/*",
+    "https://*.berlinovo.de/*",
+    "https://*.vonovia.de/*",
+    "https://*.deutsche-wohnen.com/*",
+    "https://*.buwog.de/*",
+    "https://*.grandcityproperty.de/*",
+    "https://*.tag-wohnen.de/*"
+  ],
+  "icons": {
+    "16": "icon16.png",
+    "32": "icon32.png",
+    "48": "icon48.png",
+    "128": "icon128.png"
+  },
+  "action": {
+    "default_popup": "popup/popup.html",
+    "default_title": "WohnBoard Importer",
+    "default_icon": {
+      "16": "icon16.png",
+      "32": "icon32.png",
+      "48": "icon48.png",
+      "128": "icon128.png"
+    }
+  },
+  "content_scripts": [
+    {
+      "matches": [
+        "https://*.immobilienscout24.de/*",
+        "https://*.wg-gesucht.de/*",
+        "https://*.kleinanzeigen.de/*",
+        "https://*.immowelt.de/*",
+        "https://*.immonet.de/*",
+        "https://*.housinganywhere.com/*",
+        "https://*.wunderflats.com/*",
+        "https://*.spotahome.com/*",
+        "https://*.degewo.de/*",
+        "https://*.gesobau.de/*",
+        "https://*.howoge.de/*",
+        "https://*.gewobag.de/*",
+        "https://*.wbm.de/*",
+        "https://*.stadtundland.de/*",
+        "https://*.berlinovo.de/*",
+        "https://*.vonovia.de/*",
+        "https://*.deutsche-wohnen.com/*",
+        "https://*.leg-wohnen.de/*",
+        "https://*.buwog.de/*",
+        "https://*.grandcityproperty.de/*",
+        "https://*.tag-wohnen.de/*",
+        "https://*.saga.hamburg/*",
+        "https://*.stw.berlin/*",
+        "https://*.studierendenwerk-muenchen-oberbayern.de/*",
+        "https://*.stwhh.de/*"
+      ],
+      "js": [
+        "extractors/generic.extractor.js",
+        "extractors/immoscout24.extractor.js",
+        "extractors/wg-gesucht.extractor.js",
+        "extractors/kleinanzeigen.extractor.js",
+        "extractors/immowelt.extractor.js",
+        "extractors/immonet.extractor.js",
+        "extractors/housinganywhere.extractor.js",
+        "extractors/wunderflats.extractor.js",
+        "extractors/spotahome.extractor.js",
+        "extractors/degewo.extractor.js",
+        "extractors/gesobau.extractor.js",
+        "extractors/howoge.extractor.js",
+        "extractors/gewobag.extractor.js",
+        "extractors/wbm.extractor.js",
+        "extractors/stadtundland.extractor.js",
+        "extractors/berlinovo.extractor.js",
+        "extractors/vonovia.extractor.js",
+        "extractors/deutsche-wohnen.extractor.js",
+        "extractors/leg-wohnen.extractor.js",
+        "extractors/buwog.extractor.js",
+        "extractors/grandcityproperty.extractor.js",
+        "extractors/tag-wohnen.extractor.js",
+        "extractors/saga.extractor.js",
+        "extractors/index.js",
+        "content.js"
+      ]
+    }
+  ]
+}

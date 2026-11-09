@@ -1,0 +1,911 @@
+// This is your Prisma schema file,
+// learn more about it in the docs: https://pris.ly/d/prisma-schema
+
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+enum UserRole {
+  USER
+  ADMIN
+}
+
+enum UserStatus {
+  ACTIVE
+  DISABLED
+}
+
+enum FeedbackStatus {
+  OPEN
+  IN_PROGRESS
+  RESOLVED
+}
+
+enum ApartmentStatus {
+  SAVED
+  CONTACTED
+  APPLIED
+  VIEWING_SCHEDULED
+  WAITING_RESPONSE
+  REJECTED
+  ACCEPTED
+}
+
+enum DocumentType {
+  PASSPORT_ID
+  SCHUFA
+  PAYSLIP
+  EMPLOYMENT_CONTRACT
+  VISA
+  BANK_STATEMENT
+  OTHER
+}
+
+enum ReminderType {
+  VIEWING
+  FOLLOW_UP
+  DOCUMENT
+  DEADLINE
+  CUSTOM
+}
+
+model User {
+  id                String             @id @default(uuid())
+  email             String             @unique
+  password          String
+  fullName          String?
+  preferredState    String?
+  preferredCity     String?
+  preferredLanguage String             @default("en")
+  emailReminders    Boolean            @default(true)
+  inAppReminders    Boolean            @default(true)
+  role              UserRole           @default(USER)
+  status            UserStatus         @default(ACTIVE)
+  lastLogin         DateTime?
+  deletionRequested Boolean            @default(false)
+  extensionConnected Boolean           @default(false)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  apartments        Apartment[]
+  documents         Document[]
+  reminders         Reminder[]
+  notifications     Notification[]
+  feedbacks         Feedback[]
+  importLogs        ImportLog[]
+  notes             Note[]
+  housingIdentity   HousingIdentity?
+  applications      Application[]
+}
+
+model Apartment {
+  id                String             @id @default(uuid())
+  userId            String
+  user              User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  title             String
+  rentPrice         Float?
+  warmRent          Float?
+  coldRent          Float?
+  deposit           Float?
+  address           String?            @db.Text
+  city              String?
+  zipCode           String?
+  rooms             Float?
+  squareMeters      Float?
+  furnished         Boolean            @default(false)
+  balcony           Boolean            @default(false)
+  petsAllowed       Boolean            @default(false)
+  moveInDate        DateTime?
+  sourcePlatform    String?
+  originalListingUrl String?           @db.Text
+  listingId         String?
+  coverImage        String?            @db.Text
+  status            ApartmentStatus    @default(SAVED)
+  
+  energyClass       String?
+  utilityCosts      Float?
+  heatingCostsIncluded Boolean           @default(false)
+  heatingCosts      Float?
+  constructionYear  Int?
+  heatingType       String?
+  energySource      String?
+  certificateType   String?
+  description       String?            @db.Text
+  availability      String?
+  floor             String?
+  
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  images            ApartmentImage[]
+  reminders         Reminder[]
+  logs              CommunicationLog[]
+  checklists        ChecklistItem[]
+  importLogs        ImportLog[]
+  applications      Application[]
+
+  @@unique([userId, originalListingUrl(length: 255)])
+  @@unique([userId, listingId])
+}
+
+model ApartmentImage {
+  id          String    @id @default(uuid())
+  apartmentId String
+  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  url         String    @db.Text
+  createdAt   DateTime  @default(now())
+}
+
+model Document {
+  id          String       @id @default(uuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  type        DocumentType
+  title       String
+  fileUrl     String
+  fileSize    Int?
+  mimeType    String?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  applications     ApplicationDocument[]
+  documentRequests DocumentRequest[]
+}
+
+model Reminder {
+  id          String       @id @default(uuid())
+  userId      String
+  user        User         @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apartmentId String?
+  apartment   Apartment?   @relation(fields: [apartmentId], references: [id], onDelete: SetNull)
+  title       String
+  description String?
+  type        ReminderType
+  dateTime    DateTime
+  completed   Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+}
+
+model CommunicationLog {
+  id          String    @id @default(uuid())
+  apartmentId String
+  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  type        String    // e.g. "Email", "Phone", "WhatsApp", "Note"
+  content     String    @db.Text
+  timestamp   DateTime  @default(now())
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ChecklistItem {
+  id          String    @id @default(uuid())
+  apartmentId String
+  apartment   Apartment @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  title       String
+  completed   Boolean   @default(false)
+  isCustom    Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+}
+
+model ImportLog {
+  id          String    @id @default(uuid())
+  url         String    @db.Text
+  status      String    // "SUCCESS", "FAILED"
+  error       String?   @db.Text
+  platform    String?
+  userId      String?
+  user        User?     @relation(fields: [userId], references: [id], onDelete: SetNull)
+  apartmentId String?
+  apartment   Apartment? @relation(fields: [apartmentId], references: [id], onDelete: SetNull)
+  isExtension Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+}
+
+model Notification {
+  id          String    @id @default(uuid())
+  userId      String
+  user        User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  message     String
+  read        Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+}
+
+model Feedback {
+  id          String         @id @default(uuid())
+  userId      String
+  user        User           @relation(fields: [userId], references: [id], onDelete: Cascade)
+  content     String         @db.Text
+  type        String         // "BUG", "FEATURE_REQUEST"
+  status      FeedbackStatus @default(OPEN)
+  createdAt   DateTime       @default(now())
+}
+
+model Admin {
+  id        String          @id @default(uuid())
+  email     String          @unique
+  password  String
+  fullName  String?
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+  auditLogs AdminAuditLog[]
+}
+
+model AdminAuditLog {
+  id           String    @id @default(uuid())
+  adminId      String
+  admin        Admin     @relation(fields: [adminId], references: [id], onDelete: Cascade)
+  action       String
+  targetEntity String
+  ipAddress    String?
+  timestamp    DateTime  @default(now())
+}
+
+model Note {
+  id        String   @id @default(uuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title     String
+  content   String   @db.Text
+  tags      String?  
+  isPinned  Boolean  @default(false)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+}
+
+enum BlogPostStatus {
+  DRAFT
+  PUBLISHED
+  SCHEDULED
+  ARCHIVED
+}
+
+model BlogPost {
+  id              String         @id @default(uuid())
+  title           String
+  slug            String         @unique
+  excerpt         String         @db.Text
+  featuredImage   String?        @db.Text
+  content         String         @db.LongText
+  category        String
+  tags            String?
+  language        String         @default("en")
+  status          BlogPostStatus @default(DRAFT)
+  views           Int            @default(0)
+  isFeatured      Boolean        @default(false)
+  publishDate     DateTime?
+  seoTitle        String?
+  seoDescription  String?        @db.Text
+  seoKeywords     String?
+  canonicalUrl    String?
+  ogImage         String?        @db.Text
+  twitterImage    String?        @db.Text
+  readingTime     String?
+  relatedPostIds  String?
+  createdAt       DateTime       @default(now())
+  updatedAt       DateTime       @updatedAt
+}
+
+model CookieConsentConfig {
+  id                String   @id @default("default")
+  policyVersion     Int      @default(1)
+  enabled           Boolean  @default(true)
+  titleEn           String   @default("Your Privacy Matters")
+  titleDe           String   @default("Ihre Privatsphäre ist uns wichtig")
+  descriptionEn     String   @db.Text
+  descriptionDe     String   @db.Text
+  privacyPolicyUrl  String   @default("/privacy")
+  cookiePolicyUrl   String   @default("/cookies")
+  analyticsEnabled  Boolean  @default(true)
+  functionalEnabled Boolean  @default(true)
+  updatedAt         DateTime @updatedAt
+}
+
+enum LegalPageType {
+  PRIVACY_POLICY
+  TERMS_OF_SERVICE
+  COOKIE_POLICY
+  IMPRINT
+}
+
+enum LegalPageStatus {
+  DRAFT
+  PUBLISHED
+  ARCHIVED
+}
+
+model LegalPage {
+  id               String           @id @default(uuid())
+  pageType         LegalPageType    @unique
+  status           LegalPageStatus  @default(DRAFT)
+  createdAt        DateTime         @default(now())
+  updatedAt        DateTime         @updatedAt
+  publishedAt      DateTime?
+  lastReviewedAt   DateTime?
+  noIndex          Boolean          @default(true)
+
+  titleEn          String
+  slugEn           String
+  contentEn        String           @db.LongText
+  seoTitleEn       String?
+  seoDescriptionEn String?          @db.Text
+
+  titleDe          String
+  slugDe           String
+  contentDe        String           @db.LongText
+  seoTitleDe       String?
+  seoDescriptionDe String?          @db.Text
+
+  versions         LegalPageVersion[]
+}
+
+model LegalPageVersion {
+  id            String    @id @default(uuid())
+  pageId        String
+  legalPage     LegalPage @relation(fields: [pageId], references: [id], onDelete: Cascade)
+  versionNumber Int
+  titleEn       String
+  contentEn     String    @db.LongText
+  titleDe       String
+  contentDe     String    @db.LongText
+  publishedBy   String    // Email of admin
+  publishedAt   DateTime  @default(now())
+  changeNote    String?   @db.Text
+
+  @@unique([pageId, versionNumber])
+}
+
+enum EmploymentStatus {
+  PERMANENT
+  TEMPORARY
+  STUDENT
+  SELF_EMPLOYED
+  UNEMPLOYED
+}
+
+enum SmokingStatus {
+  NON_SMOKER
+  SMOKER
+}
+
+enum RelationshipStatus {
+  SINGLE
+  COUPLE
+  FAMILY
+}
+
+enum MovingArrangement {
+  ALONE
+  WITH_PARTNER
+  WITH_FAMILY
+  FLATSHARE
+}
+
+enum SectionVerificationStatus {
+  NOT_STARTED
+  INCOMPLETE
+  COMPLETED
+  VERIFIED
+  EXPIRED
+}
+
+model HousingIdentity {
+  id                String                 @id @default(uuid())
+  userId            String                 @unique
+  user              User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  completionScore   Int                    @default(0)
+  biography         String?                @db.Text
+  occupationSummary String?                @db.Text
+  isDeleted         Boolean                @default(false)
+
+  personalInfo      HousingPersonalInfo?
+  householdInfo     HousingHouseholdInfo?
+  employmentInfo    HousingEmploymentInfo?
+  preferences       HousingRentalPreferences?
+  rentalHistory     HousingRentalHistory?
+  guarantorInfo     HousingGuarantorInfo?
+  shareLinks        HousingShareLink[]
+  auditLogs         HousingIdentityAuditLog[]
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+}
+
+model HousingPersonalInfo {
+  id                String                 @id @default(uuid())
+  identityId        String                 @unique
+  identity          HousingIdentity        @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  profilePhotoUrl   String?                @db.Text
+  firstName         String?
+  lastName          String?
+  dateOfBirth       DateTime?
+  nationality       String?
+  languages         String?
+  phone             String?
+  email             String?
+  currentAddress    String?                @db.Text
+  currentCity       String?
+  postalCode        String?
+  country           String?
+  emergencyContact  String?                @db.Text
+  
+  verificationStatus SectionVerificationStatus @default(NOT_STARTED)
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+}
+
+model HousingHouseholdInfo {
+  id                String                 @id @default(uuid())
+  identityId        String                 @unique
+  identity          HousingIdentity        @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  numberOfOccupants Int                    @default(1)
+  adults            Int                    @default(1)
+  children          Int                    @default(0)
+  hasPets           Boolean                @default(false)
+  petDetails        String?                @db.Text
+  smokingStatus     SmokingStatus          @default(NON_SMOKER)
+  relationshipStatus RelationshipStatus    @default(SINGLE)
+  movingArrangement MovingArrangement      @default(ALONE)
+
+  verificationStatus SectionVerificationStatus @default(NOT_STARTED)
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+}
+
+model HousingEmploymentInfo {
+  id                String                 @id @default(uuid())
+  identityId        String                 @unique
+  identity          HousingIdentity        @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  employmentStatus  EmploymentStatus       @default(PERMANENT)
+  employer          String?
+  position          String?
+  startDate         DateTime?
+  monthlyNetIncome  Float?
+  isConfirmed       Boolean                @default(false)
+  confirmationDocUrl String?               @db.Text
+
+  verificationStatus SectionVerificationStatus @default(NOT_STARTED)
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+}
+
+model HousingRentalPreferences {
+  id                String                 @id @default(uuid())
+  identityId        String                 @unique
+  identity          HousingIdentity        @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  preferredCity     String?
+  preferredDistricts String?               @db.Text
+  maxRent           Float?
+  minRooms          Float?
+  minArea           Float?
+  moveInDate        DateTime?
+  balcony           Boolean                @default(false)
+  parking           Boolean                @default(false)
+  elevator          Boolean                @default(false)
+  furnished         Boolean                @default(false)
+  garden            Boolean                @default(false)
+  petsAllowed       Boolean                @default(false)
+  accessibility     Boolean                @default(false)
+
+  verificationStatus SectionVerificationStatus @default(NOT_STARTED)
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+}
+
+model HousingRentalHistory {
+  id                String                 @id @default(uuid())
+  identityId        String                 @unique
+  identity          HousingIdentity        @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  currentLandlord   String?
+  previousLandlord  String?
+  currentRent       Float?
+  rentalDuration    String?
+  reasonForMoving   String?                @db.Text
+  rentalReferences  String?                @db.Text
+  recommendationDocUrl String?             @db.Text
+
+  verificationStatus SectionVerificationStatus @default(NOT_STARTED)
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+}
+
+model HousingGuarantorInfo {
+  id                String                 @id @default(uuid())
+  identityId        String                 @unique
+  identity          HousingIdentity        @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  available         Boolean                @default(false)
+  name              String?
+  relationship      String?
+  income            Float?
+  supportingDocsUrl String?                @db.Text
+
+  verificationStatus SectionVerificationStatus @default(NOT_STARTED)
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+}
+
+model HousingShareLink {
+  id                String                 @id @default(uuid())
+  identityId        String
+  identity          HousingIdentity        @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  token             String                 @unique
+  passwordHash      String?
+  maxViews          Int?
+  viewCount         Int                    @default(0)
+  expiresAt         DateTime?
+  revoked           Boolean                @default(false)
+  customMessage     String?                @db.Text
+  permissionsJson   String                 @db.Text
+
+  createdAt         DateTime               @default(now())
+  updatedAt         DateTime               @updatedAt
+}
+
+model HousingIdentityAuditLog {
+  id                String                 @id @default(uuid())
+  identityId        String
+  identity          HousingIdentity        @relation(fields: [identityId], references: [id], onDelete: Cascade)
+
+  action            String
+  description       String                 @db.Text
+  ipAddress         String?
+  timestamp         DateTime               @default(now())
+}
+
+enum ApplicationStatus {
+  DRAFT
+  PREPARED
+  SENT
+  DELIVERED
+  OPENED
+  DOCUMENTS_VIEWED
+  ADDITIONAL_DOCUMENTS_REQUESTED
+  VIEWING_SCHEDULED
+  VIEWING_COMPLETED
+  WAITING
+  ACCEPTED
+  REJECTED
+  WITHDRAWN
+  ARCHIVED
+}
+
+model Application {
+  id                 String                   @id @default(uuid())
+  userId             String
+  user               User                     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  apartmentId        String
+  apartment          Apartment                @relation(fields: [apartmentId], references: [id], onDelete: Cascade)
+  propertyId         String?
+  property           Property?                @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+
+  status             ApplicationStatus        @default(DRAFT)
+  referenceNumber    String                   @unique
+  sharedProfileFields String                  @db.Text // JSON string list of shared profile sections
+  
+  appliedAt          DateTime?
+  viewingAt          DateTime?
+  createdAt          DateTime                 @default(now())
+  updatedAt          DateTime                 @updatedAt
+
+  documents          ApplicationDocument[]
+  timeline           ApplicationTimeline[]
+  message            ApplicationMessage?
+  sharing            ApplicationSharing?
+  notes              ApplicationNote[]
+  reminders          ApplicationReminder[]
+  documentRequests   DocumentRequest[]
+  offers             ApplicationOffer[]
+  activityLogs       ApplicationActivityLog[]
+
+  @@unique([userId, apartmentId])
+}
+
+enum LandlordRole {
+  OWNER
+  PROPERTY_MANAGER
+  ASSISTANT
+}
+
+enum ViewingStatus {
+  SCHEDULED
+  RESCHEDULED
+  COMPLETED
+  CANCELLED
+}
+
+enum PropertyStatus {
+  ACTIVE
+  PAUSED
+  RENTED
+  ARCHIVED
+}
+
+model Landlord {
+  id          String   @id @default(uuid())
+  email       String   @unique
+  password    String
+  companyName String?
+  fullName    String
+  phone       String?
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  teamMembers LandlordTeamMember[]
+  properties  Property[]
+}
+
+model LandlordTeamMember {
+  id         String       @id @default(uuid())
+  landlordId String
+  landlord   Landlord     @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  email      String
+  fullName   String
+  role       LandlordRole @default(PROPERTY_MANAGER)
+  createdAt  DateTime     @default(now())
+
+  @@unique([landlordId, email])
+}
+
+model Property {
+  id                 String         @id @default(uuid())
+  landlordId         String
+  landlord           Landlord       @relation(fields: [landlordId], references: [id], onDelete: Cascade)
+  
+  title              String
+  referenceNumber    String         @unique
+  address            String         @db.Text
+  city               String?
+  zipCode            String?
+  rentPrice          Float
+  warmRent           Float?
+  coldRent           Float?
+  deposit            Float?
+  rooms              Float
+  squareMeters       Float
+  floor              String?
+  availability       String?
+  status             PropertyStatus @default(ACTIVE)
+  description        String?        @db.Text
+  listingUrl         String?        @db.Text
+  coverImage         String?        @db.Text
+
+  createdAt          DateTime       @default(now())
+  updatedAt          DateTime       @updatedAt
+
+  images             PropertyImage[]
+  viewings           LandlordViewing[]
+  applications       Application[]
+  auditLogs          LandlordAuditLog[]
+}
+
+model PropertyImage {
+  id         String   @id @default(uuid())
+  propertyId String
+  property   Property @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  url        String   @db.Text
+  createdAt  DateTime @default(now())
+}
+
+model LandlordApplicantNote {
+  id            String   @id @default(uuid())
+  landlordId    String
+  applicationId String
+  authorName    String
+  content       String   @db.Text
+  createdAt     DateTime @default(now())
+
+  @@index([applicationId])
+}
+
+model LandlordViewing {
+  id            String        @id @default(uuid())
+  propertyId    String
+  property      Property      @relation(fields: [propertyId], references: [id], onDelete: Cascade)
+  applicationId String
+  title         String
+  scheduledAt   DateTime
+  durationMins  Int           @default(30)
+  location      String?       @db.Text
+  status        ViewingStatus @default(SCHEDULED)
+  notes         String?       @db.Text
+  createdAt     DateTime      @default(now())
+  updatedAt     DateTime      @updatedAt
+
+  @@index([propertyId])
+  @@index([applicationId])
+}
+
+model LandlordMessage {
+  id            String   @id @default(uuid())
+  applicationId String
+  senderType    String   // LANDLORD or APPLICANT
+  senderName    String
+  content       String   @db.Text
+  read          Boolean  @default(false)
+  createdAt     DateTime @default(now())
+
+  @@index([applicationId])
+}
+
+model LandlordAuditLog {
+  id            String    @id @default(uuid())
+  landlordId    String
+  propertyId    String?
+  property      Property? @relation(fields: [propertyId], references: [id], onDelete: SetNull)
+  applicationId String?
+  action        String
+  description   String    @db.Text
+  ipAddress     String?
+  createdAt     DateTime  @default(now())
+}
+
+
+model ApplicationDocument {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  documentId    String
+  document      Document    @relation(fields: [documentId], references: [id], onDelete: Cascade)
+  orderIndex    Int         @default(0)
+  createdAt     DateTime    @default(now())
+}
+
+enum TimelineEventType {
+  SYSTEM
+  DOCUMENT_REQUEST
+  VIEWING_INVITATION
+  OFFER
+  NOTE
+}
+
+enum TimelineActor {
+  SYSTEM
+  LANDLORD
+  APPLICANT
+}
+
+enum OfferStatus {
+  SENT
+  ACCEPTED
+  DECLINED
+  EXPIRED
+}
+
+model ApplicationTimeline {
+  id            String            @id @default(uuid())
+  applicationId String
+  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  status        ApplicationStatus
+  eventType     TimelineEventType @default(SYSTEM)
+  actor         TimelineActor     @default(SYSTEM)
+  actorName     String?
+  notes         String?           @db.Text
+  metadata      String?           @db.Text
+  createdAt     DateTime          @default(now())
+
+  comments      TimelineComment[]
+}
+
+model TimelineComment {
+  id            String              @id @default(uuid())
+  timelineId    String
+  timeline      ApplicationTimeline @relation(fields: [timelineId], references: [id], onDelete: Cascade)
+  senderType    String              // LANDLORD or APPLICANT
+  senderName    String
+  content       String              @db.Text
+  createdAt     DateTime            @default(now())
+
+  @@index([timelineId])
+}
+
+model ApplicationOffer {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  rentPrice     Float
+  moveInDate    DateTime
+  deposit       Float?
+  terms         String?     @db.Text
+  status        OfferStatus @default(SENT)
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+
+  @@index([applicationId])
+}
+
+model ApplicationMessage {
+  id            String      @id @default(uuid())
+  applicationId String      @unique
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  templateName  String      @default("CUSTOM")
+  subject       String?
+  content       String      @db.Text
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model ApplicationSharing {
+  id              String      @id @default(uuid())
+  applicationId   String      @unique
+  application     Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  token           String      @unique
+  passwordHash    String?
+  maxViews        Int?
+  viewCount       Int         @default(0)
+  expiresAt       DateTime?
+  allowDownloads  Boolean     @default(true)
+  watermarkDocs   Boolean     @default(false)
+  revoked         Boolean     @default(false)
+  createdAt       DateTime    @default(now())
+  updatedAt       DateTime    @updatedAt
+}
+
+model DocumentRequest {
+  id            String            @id @default(uuid())
+  applicationId String
+  application   Application       @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  requestedType String
+  description   String?           @db.Text
+  isFulfilled   Boolean           @default(false)
+  documentId    String?
+  document      Document?         @relation(fields: [documentId], references: [id], onDelete: SetNull)
+  requestedAt   DateTime          @default(now())
+  fulfilledAt   DateTime?
+}
+
+model ApplicationNote {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  content       String      @db.Text
+  createdAt     DateTime    @default(now())
+  updatedAt     DateTime    @updatedAt
+}
+
+model ApplicationReminder {
+  id            String       @id @default(uuid())
+  applicationId String
+  application   Application  @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  title         String
+  description   String?      @db.Text
+  dateTime      DateTime
+  completed     Boolean      @default(false)
+  createdAt     DateTime     @default(now())
+  updatedAt     DateTime     @updatedAt
+}
+
+model ApplicationActivityLog {
+  id            String      @id @default(uuid())
+  applicationId String
+  application   Application @relation(fields: [applicationId], references: [id], onDelete: Cascade)
+  action        String
+  description   String      @db.Text
+  ipAddress     String?
+  createdAt     DateTime    @default(now())
+}
+
+
+

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>WohnBoard</title>
+  <link rel="stylesheet" href="popup.css">
+  <script src="popup.js" defer></script>
+</head>
+<body>
+  <div class="app-container">
+    
+    <!-- Header -->
+    <header class="app-header">
+      <div class="logo-area">
+        <div class="logo-circle">
+          <svg class="logo-icon" viewBox="0 0 24 24" fill="none">
+            <!-- Chimney -->
+            <rect x="17.4" y="4.5" width="2.8" height="4.5" fill="#0f172a" rx="0.3" />
+            
+            <!-- Roof -->
+            <path d="M 1.2,10.5 L 12,3.5 L 22.8,10.5" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            
+            <!-- House Body -->
+            <path d="M 4.2,9 L 4.2,19.5 C 4.2,20.6 5.1,21.5 6.2,21.5 L 17.8,21.5 C 18.9,21.5 19.8,20.6 19.8,19.5 L 19.8,16" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+            <path d="M 19.8,9 L 19.8,11" stroke="#0f172a" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+
+            <!-- Horizontal lines -->
+            <line x1="6.8" y1="10.5" x2="16.4" y2="10.5" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+            <line x1="6.8" y1="12.5" x2="16.4" y2="12.5" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+            <line x1="6.8" y1="14.5" x2="14.0" y2="14.5" stroke="#94a3b8" stroke-width="1" stroke-linecap="round" />
+
+            <!-- Checkmark -->
+            <path d="M 10.5,15.5 L 13,18 L 21.2,9.8" stroke="#2563eb" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" />
+          </svg>
+        </div>
+        <span class="logo-text">WohnBoard</span>
+      </div>
+      <div class="header-right">
+        <div class="status-indicator" id="connection-indicator">
+          <span class="dot"></span>
+          <span class="status-label" id="txt-status-label">Checking...</span>
+        </div>
+      </div>
+    </header>
+
+    <main class="app-content">
+      
+      <!-- 1. Disconnected State -->
+      <div id="view-disconnected" class="view hidden">
+        <div class="workflow-state centered">
+          <div class="state-illustration">
+            <div class="illustration-circle bg-blue-light">
+              <svg class="ill-icon text-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V6.75a4.5 4.5 0 10-9 0v3.75m-.75 11.25h10.5a2.25 2.25 0 002.25-2.25v-6.75a2.25 2.25 0 00-2.25-2.25H6.75a2.25 2.25 0 00-2.25 2.25v6.75a2.25 2.25 0 002.25 2.25z" />
+              </svg>
+            </div>
+          </div>
+          <h2 class="state-title" id="txt-disc-title">Save apartments with one click.</h2>
+          <p class="state-desc" id="txt-disc-desc">Connect your WohnBoard account to start saving apartment listings.</p>
+          <button id="btn-connect" class="btn btn-primary btn-block">Connect Account</button>
+          <p class="trust-footer" id="txt-disc-trust">Simple • Secure • GDPR Compliant • Free</p>
+        </div>
+      </div>
+
+      <!-- 2. Connected State — Not on Supported Page -->
+      <div id="view-unsupported" class="view hidden">
+        <div class="workflow-state centered">
+          <div class="state-illustration">
+            <div class="illustration-circle bg-blue-light">
+              <svg class="ill-icon text-blue" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <rect x="2" y="2" width="20" height="20" rx="5" ry="5" />
+                <path d="M12 9v4M12 17h.01" stroke-linecap="round" />
+              </svg>
+            </div>
+          </div>
+          <h2 class="state-title" id="txt-unsupported-title">Open an apartment listing</h2>
+          <p class="state-desc" id="txt-unsupported-desc">Open an apartment listing page to save it to WohnBoard.</p>
+          <button id="btn-open-dashboard" class="btn btn-primary btn-block">Open WohnBoard</button>
+          <p class="trust-footer" id="txt-unsupported-help">Supported apartment websites only.</p>
+        </div>
+      </div>
+
+      <!-- 3. Connected State — Listing Detected Before Save -->
+      <div id="view-detected" class="view hidden">
+        <div class="workflow-state">
+          <div class="badge-row">
+            <span class="status-badge bg-blue-badge text-blue-badge" id="badge-detected">Apartment detected</span>
+          </div>
+          
+          <div class="preview-card">
+            <h3 id="preview-title" class="preview-card-title">Loading title...</h3>
+            <div class="preview-details">
+              <span id="preview-rent" class="preview-metric">-</span>
+              <span class="preview-dot">•</span>
+              <span id="preview-size" class="preview-metric">-</span>
+              <span class="preview-dot">•</span>
+              <span id="preview-city" class="preview-metric">-</span>
+            </div>
+            <div class="preview-source">
+              <span class="source-circle"></span>
+              <span id="preview-source-text">Apartment website</span>
+            </div>
+          </div>
+
+          <button id="btn-save" class="btn btn-primary btn-block">Save to WohnBoard</button>
+          <p class="edit-help-text" id="txt-save-help">Edit details after saving.</p>
+        </div>
+      </div>
+
+      <!-- 4. Saving State -->
+      <div id="view-saving" class="view hidden">
+        <div class="workflow-state centered">
+          <div class="spinner-container">
+            <div class="loading-spinner"></div>
+          </div>
+          <h2 class="state-title mt-4" id="txt-saving-title">Saving apartment...</h2>
+          <p class="state-desc" id="txt-saving-desc">Please wait while we add this listing to your board.</p>
+        </div>
+      </div>
+
+      <!-- 5. Saved Successfully State -->
+      <div id="view-saved" class="view hidden">
+        <div class="workflow-state centered">
+          <div class="state-illustration">
+            <div class="illustration-circle bg-success-light">
+              <svg class="ill-icon text-success" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3">
+                <path stroke-linecap="round" stroke-linejoin="round" d="M4.5 12.75l6 6 9-13.5" />
+              </svg>
+            </div>
+          </div>
+          <h2 class="state-title" id="txt-saved-title">Saved successfully</h2>
+          <p class="state-desc" id="txt-saved-desc">This apartment has been added to your WohnBoard.</p>
+          
+          <!-- Small confirmation preview of what was saved -->
+          <div class="saved-preview-card">
+            <h4 id="saved-title" class="saved-card-title">-</h4>
+            <p id="saved-info" class="saved-card-info">-</p>
+          </div>
+
+          <div class="button-stack">
+            <button id="btn-open-apartment" class="btn btn-primary btn-block">Open Apartment</button>
+            <button id="btn-open-board" class="btn btn-secondary btn-block">Open Board</button>
+          </div>
+          <p class="info-help-text" id="txt-saved-help">You can now track status, documents and reminders.</p>
+        </div>
+      </div>
+
+      <!-- 6. Already Saved State -->
+      <div id="view-already-saved" class="view hidden">
+        <div class="workflow-state centered">
+          <div class="state-illustration">
+            <div class="illustration-circle bg-gray-light">
+              <svg class="ill-icon text-gray" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="10" />
+                <line x1="12" y1="16" x2="12" y2="12" />
+                <line x1="12" y1="8" x2="12.01" y2="8" />
+              </svg>
+            </div>
+          </div>
+          <h2 class="state-title" id="txt-already-title">Already saved</h2>
+          <p class="state-desc" id="txt-already-desc">This apartment is already in your WohnBoard.</p>
+          <button id="btn-open-apartment-dup" class="btn btn-primary btn-block">Open Apartment</button>
+        </div>
+      </div>
+
+      <!-- 7. Extraction Failed State -->
+      <div id="view-failed" class="view hidden">
+        <div class="workflow-state centered">
+          <div class="state-illustration">
+            <div class="illustration-circle bg-gray-light">
+              <svg class="ill-icon text-gray" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              </svg>
+            </div>
+          </div>
+          <h2 class="state-title" id="txt-failed-title">Couldn't read this listing</h2>
+          <p class="state-desc" id="txt-failed-desc">You can still save it manually in WohnBoard.</p>
+          
+          <div class="button-stack">
+            <button id="btn-add-manually" class="btn btn-primary btn-block">Add Manually</button>
+            <button id="btn-try-again" class="btn btn-secondary btn-block">Try Again</button>
+          </div>
+        </div>
+      </div>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="app-footer">
+      <div class="footer-content">
+        <a href="http://localhost:3001/privacy-policy" target="_blank" class="footer-link" id="lnk-privacy">Privacy Policy</a>
+      </div>
+      <!-- Diagnostics Details Collapsible -->
+      <details class="diagnostics-details">
+        <summary>Diagnostics</summary>
+        <div id="diag-cookies">Reading cookies...</div>
+      </details>
+    </footer>
+
+  </div>
+</body>
+</html>
